@@ -259,33 +259,19 @@ async function sendAll(){
   const bar=g('progressBar'); bar.style.display='block';
   let sent=0;
 
-  const RESEND_KEY = 'JOUW_RE_SLEUTEL_HIER';
-  const FROM = 'onboarding@resend.dev';
-  const TO = 'JOUW_ONTVANGST_EMAILADRES_HIER';
-
   for(const f of fotos){
     const n=fname(po,f.desc);
     g('sendLabel').textContent=`Versturen ${sent+1}/${fotos.length}...`;
     g('progressFill').style.width=Math.round((sent/fotos.length)*100)+'%';
 
-    const body={
-      from: FROM,
-      to: [TO],
-      subject: `[FOTOPORTAL] ${proj} | ${n}`,
-      text: `Projectnummer: ${proj}\nPO-nummer: ${po}\nOmschrijving: ${f.desc}\nBestandsnaam: ${n}\n\nAutomatisch verstuurd via Foto Portal.`,
-      attachments:[{content: f.b64, filename: n}]
-    };
+    const body={project:proj,po,desc:f.desc,fname:n,subject:`[FOTOPORTAL] ${proj} | ${n}`,image:f.b64};
     try{
-      const res=await fetch('https://api.resend.com/emails',{
+      const res=await fetch('/.netlify/functions/send',{
         method:'POST',
-        headers:{'Authorization':'Bearer '+RESEND_KEY,'Content-Type':'application/json'},
+        headers:{'Content-Type':'application/json'},
         body:JSON.stringify(body)
       });
-      if(!res.ok){
-        const err=await res.text();
-        console.error(err);
-        showToast(`Fout bij foto ${sent+1}`,'error'); break;
-      }
+      if(!res.ok){showToast(`Fout bij foto ${sent+1}`,'error'); break;}
     }catch(e){showToast('Netwerkfout','error'); break;}
     sent++;
   }
